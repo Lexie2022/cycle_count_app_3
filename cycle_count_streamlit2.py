@@ -24,7 +24,7 @@ from streamlit_qrcode_scanner import qrcode_scanner
 pdfmetrics.registerFont(UnicodeCIDFont('STSong-Light'))
 
 @st.cache_data
-def load_inventory(file_path="inventory.xls", sheet_name="BRITA"):
+def load_inventory(file_path="inventory.xlsx", sheet_name="BRITA"):
     
     # 读取指定 sheet（BRITA），并从表中取出第 C(索引2)、G(索引6)、K(索引10) 列，
     # 并重命名为 SKU, Location, SystemQty，做基本清洗。
@@ -304,4 +304,5 @@ if not st.session_state.results.empty:
                 file_name=os.path.basename(pdf_path),
                 mime="application/pdf"
             )
+
 
