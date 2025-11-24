@@ -6,3 +6,6 @@ matplotlib
 openpyxl
 reportlab
 streamlit-qrcode-scanner
+opencv-python-headless
+pyzxing
+Pillow
