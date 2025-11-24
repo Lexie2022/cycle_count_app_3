@@ -18,7 +18,6 @@ from reportlab.pdfbase import pdfmetrics
 # Frontend QR/barcode scanner (works in Streamlit Cloud, mobile camera)
 from streamlit_qrcode_scanner import qrcode_scanner
 from PIL import Image
-from pyzbar.pyzbar import decode
 
 # ---------------- Helper functions ----------------
 
@@ -366,6 +365,7 @@ if not st.session_state.results.empty:
                 file_name=os.path.basename(pdf_path),
                 mime="application/pdf"
             )
+
 
 
 
