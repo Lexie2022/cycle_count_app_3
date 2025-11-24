@@ -70,52 +70,64 @@ def save_results(df, suffix="results", name_prefix="cycle_count"):
     df.to_excel(file_name, index=False)
     return file_name
 
+
+import cv2
+from pyzxing import BarCodeReader
+from PIL import Image
+
+qr_reader = BarCodeReader()  # ZXing 解码器
+def decode_image(image):
+    """识别二维码 + 条形码（OpenCV + ZXing）"""
+    # 转换成 OpenCV 格式
+    img = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+
+    # ---------- 识别二维码（ZXing） ----------
+    qr_result = qr_reader.decode_array(img)
+    if qr_result:
+        return qr_result[0].get("raw", None)
+
+    # ---------- 识别条形码（OpenCV） ----------
+    detector = cv2.QRCodeDetector()
+    data, bbox, _ = detector.detectAndDecode(img)
+    if data:
+        return data
+
+    return None
+
 def scan_code(label, key):
     """
-    自动适配 Streamlit Cloud / 本地运行环境的扫码函数
-    - 本地：启用摄像头（若可用）
-    - 云端：启用图片上传
-    - 自动识别 QR + 条形码
+    Cloud：使用上传图片
+    本地：摄像头 + 上传
     """
     st.subheader(label)
 
-    # 判断是否在 Cloud（STREAMLIT_SERVER_DEPLOYMENT 已在 cloud 环境）
-    is_cloud = "STREAMLIT_SERVER_DEployment_TYPE" in os.environ or "STREAMLIT_CLOUD" in os.environ
+    # 判断是否在 Streamlit Cloud
+    is_cloud = "STREAMLIT_SERVER_DEployment_TYPE" in os.environ
 
-    # ----------------------
-    # 云端模式：只允许上传图片
-    # ----------------------
     if is_cloud:
-        uploaded = st.file_uploader("上传二维码或条形码图片", type=["jpg", "jpeg", "png"], key=key)
-        if uploaded:
-            img = Image.open(uploaded)
-            result = decode(img)
+        img_file = st.file_uploader("上传二维码或条形码图片", type=["jpg", "jpeg", "png"], key=key)
+        if img_file:
+            img = Image.open(img_file)
+            result = decode_image(img)
             if result:
-                code = result[0].data.decode("utf-8")
-                st.success(f"识别成功：{code}")
-                return code
-            else:
-                st.error("未识别到二维码/条形码")
-                return None
+                st.success(f"识别成功：{result}")
+                return result
+            st.error("未识别到任何二维码或条形码")
         return None
 
-    # ----------------------
-    # 本地模式：使用摄像头
-    # ----------------------
-    image = st.camera_input("点击拍照进行扫码", key=key)
-
-    if image is not None:
-        img = Image.open(image)
-        result = decode(img)
+    # ---------------- 本地摄像头模式 ----------------
+    cam = st.camera_input("点击拍照扫码", key=key)
+    if cam:
+        img = Image.open(cam)
+        result = decode_image(img)
         if result:
-            code = result[0].data.decode("utf-8")
-            st.success(f"识别成功：{code}")
-            return code
-        else:
-            st.error("未识别到二维码/条形码")
-            return None
+            st.success(f"识别成功：{result}")
+            return result
+        st.error("未识别到任何二维码或条形码")
+        return None
 
     return None
+
 
 def create_inventory_report(df, accuracy, shortage_df, overage_df):
     """
@@ -251,7 +263,7 @@ if "results" not in st.session_state:
 st.markdown("**扫码说明**：点击下方“打开摄像头扫描”会请求浏览器相机权限，手机可直接使用摄像头扫码；若无法调用摄像头，请使用下方手动输入。")
 
 # 扫库位
-loc_scan = scan_code("📌 扫描库位二维码", "scan_location")
+loc_scan = scan_code("📌 扫描库位二维码", "loc_scanner")
 if loc_scan:
     st.info(f"检测到库位条码：{loc_scan}")
     if st.button("确认库位", key="confirm_loc"):
@@ -259,7 +271,7 @@ if loc_scan:
         st.success(f"当前库位设为：{st.session_state.current_location}")
 
 # 扫 SKU
-sku_scan = scan_code("📦 扫描 SKU 条码 / 二维码", "scan_sku")
+sku_scan = scan_code("📦 扫描 SKU 条码 / 二维码", "sku_scanner")
 if sku_scan:
     st.info(f"检测到 SKU：{sku_scan}")
     if st.button("确认 SKU", key="confirm_sku"):
@@ -354,6 +366,7 @@ if not st.session_state.results.empty:
                 file_name=os.path.basename(pdf_path),
                 mime="application/pdf"
             )
+
 
 
 
