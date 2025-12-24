@@ -1,6 +1,7 @@
 # cycle_count_streamlit_fixed.py
 import streamlit as st
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import math
@@ -365,6 +366,7 @@ if not st.session_state.results.empty:
                 file_name=os.path.basename(pdf_path),
                 mime="application/pdf"
             )
+
 
 
 
